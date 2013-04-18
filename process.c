@@ -2,12 +2,15 @@
 #include <math.h>
 #include <assert.h>
 
+#include "mlab/mlab.h"
+
 socklen_t salen = sizeof (Sockaddr);
 
-char *host;                  /* name of the destination machine */
+const char *host;            /* name of the destination machine */
 char *dump_file = NULL;      /* name of the dump file or NULL */
 FILE *dump_file_fp = NULL;   /* file pointer for dump file */
 int dump_minima = 0;         /* flag: should we write mins files? */
+int use_mlab = 0;            /* flag: should we get the domain from mlab? */
 char *input_file = NULL;     /* name of input file or NULL */
 FILE *input_file_fp = NULL;  /* file pointer for dump file */
 int min_ttl = 1;             /* starting ttl */
@@ -41,17 +44,17 @@ Path *paths[MAX_ALT_PATH];
 
 Sample *make_sample (int ttl, int packet_size, int space)
 {
-  Sample *new = (Sample *) malloc (sizeof (Sample));
+  Sample *_new = (Sample *) malloc (sizeof (Sample));
 
-  new->ttl = ttl;
-  new->size = packet_size;
+  _new->ttl = ttl;
+  _new->size = packet_size;
   if (space != 0) {
-    new->x = (double *) malloc (space * sizeof (double));
+    _new->x = (double *) malloc (space * sizeof (double));
   }
-  new->n = 0;
-  new->space = space;
+  _new->n = 0;
+  _new->space = space;
   
-  return new;
+  return _new;
 }
 
 /* make_link */
@@ -59,24 +62,24 @@ Sample *make_sample (int ttl, int packet_size, int space)
 Link *make_link (int ttl)
 {
   int i;
-  Link *new = (Link *) malloc (sizeof (Link));
+  Link *_new = (Link *) malloc (sizeof (Link));
 
-  new->ttl = ttl;
+  _new->ttl = ttl;
   for (i=0; i<MAX_SIZE; i++) {
-    new->sample[i] = NULL;
+    _new->sample[i] = NULL;
   }
-  return new;
+  return _new;
 }
 
 /* make_fit */
 
 Fit *make_fit ()
 {
-  Fit *new = (Fit *) malloc (sizeof (Fit));
+  Fit *_new = (Fit *) malloc (sizeof (Fit));
 
-  new->b0 = 0.0;
-  new->b1 = 0.0;
-  return new;
+  _new->b0 = 0.0;
+  _new->b1 = 0.0;
+  return _new;
 }
 
 /* make_path */
@@ -84,18 +87,20 @@ Fit *make_fit ()
 Path *make_path ()
 {
   int i;
-  Path *new = (Path *) malloc (sizeof (Path));
+  Path *_new = (Path *) malloc (sizeof (Path));
 
   for (i=0; i<MAX_LINKS; i++) {
-    new->both[i] = NULL;
-    new->evens[i] = NULL;
-    new->odds[i] = NULL;
-    bzero (&new->addr[i], salen);
+    _new->both[i] = NULL;
+    _new->evens[i] = NULL;
+    _new->odds[i] = NULL;
+    bzero (&_new->addr[i], salen);
   }
-  return new;
+  return _new;
 }
 
 /* make_sizes */
+
+extern void* Malloc(size_t);
 
 Sizes *make_sizes (int low, int high, int step)
 {
@@ -871,6 +876,7 @@ void remove_link_min (Link *link)
             0 if the new datum does not alter the sample minimum
 	    1 if the new datum is a new minimum     */
 
+int send_one_probe (int size, int ttl);
 int send_probe_sample (Sample *s)
 {
   int n = s->n;
@@ -970,7 +976,7 @@ int fiddle_link (Link *link)
   int i, ret;
   int n = 0;
 
-  if (link == NULL) return;
+  if (link == NULL) return 0;
 
   /* get more data for any size with a positive residual */
   process_link (link);
@@ -1052,6 +1058,7 @@ void process_path (Path *path, int from, int to)
    a PORT UNREACHABLE error (indicating that they reached the
    destination) */
 
+int send_probe (int size, int ttl, int timeout, Datum *datum);
 int send_one_probe (int size, int ttl)
 {
   int code;
@@ -1271,6 +1278,7 @@ void swap_link (int ttl, int k1, int k2)
    Once enough probes are sent, process the new data and print
    a summary of it */
 
+void clink_init (const char *host, int tos);
 void clink_loop ()
 {
   int i, ttl, k;
@@ -1325,7 +1333,7 @@ main (int argc, char *argv[])
   int i, c;
 
   opterr = 0;
-  while ( (c = getopt (argc, argv, "knvMD:I:f:h:i:l:m:q:r:s:t:w:")) != -1) {
+  while ( (c = getopt (argc, argv, "knvMND:I:f:h:i:l:m:q:r:s:t:w:")) != -1) {
     switch (c) {
     case 'k':
       kernel_timestamps = 1;
@@ -1349,6 +1357,9 @@ main (int argc, char *argv[])
       break;
     case 'M':
       dump_minima = 1;
+      break;
+    case 'N':
+      use_mlab = 1;
       break;
     case 'f':
       if ( (min_ttl = atoi(optarg)) < 1) {
@@ -1412,19 +1423,28 @@ main (int argc, char *argv[])
     paths[i] = NULL;
   }
 
-  if (input_file != NULL) {
-    host = input_file;
-    process_file ();
-    exit (0);
-  }
+  if (use_mlab == 0) {
+    if (input_file != NULL) {
+      host = input_file;
+      process_file ();
+      exit (0);
+    }
 
-  if (optind != argc - 1) {
-    err_quit ("usage: clink [options] <hostname> or clink -Iinput_file");
-  }
+    if (optind != argc - 1) {
+      err_quit ("usage: clink [options] <hostname> or clink -Iinput_file or clink -N");
+    }
 
-  host = argv[optind];
+    host = argv[optind];
+  } else {
+    mlab_initialize("clink", "1.0");
+    host = mlab_ns_lookup_hostname_for_tool("ndt")->hostname;
+  }
 
   clink_loop ();
+
+  if (use_mlab) {
+    mlab_shutdown();
+  }
 
   return 0;
 }

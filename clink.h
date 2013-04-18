@@ -90,7 +90,7 @@ void tv_sub (struct timeval *out, struct timeval *in);
 char *icmpcode_v4(int code);
 Sigfunc *Signal(int signo, Sigfunc *func);
 void *Calloc(size_t n, size_t size);
-void Gettimeofday(struct timeval *tv, void *foo);
+void Gettimeofday(struct timeval *tv, struct timezone *foo);
 void Pipe(int *fds);
 void Bind(int fd, const struct sockaddr *sa, socklen_t salen);
 void Setsockopt(int fd, int level, int optname, const void *optval,
@@ -100,7 +100,7 @@ void Sendto(int fd, const void *ptr, size_t nbytes, int flags,
 struct addrinfo *Host_serv(const char *host, const char *serv,
                            int family, int socktype);
 ssize_t Read(int fd, void *ptr, size_t nbytes);
-void Write(int fd, void *ptr, size_t nbytes);
+void Write(int fd, const void *ptr, size_t nbytes);
 ssize_t Recvfrom(int fd, void *ptr, size_t nbytes, int flags,
 		 struct sockaddr *sa, socklen_t *salenptr);
 int Socket(int family, int type, int protocol);
@@ -108,7 +108,7 @@ void err_sys (char *fmt, ...);
 void err_quit (char *fmt, ...);
 void err_msg (char *fmt, ...);
 void microsleep (int usecs);
-int convert_sockaddr (char *ip_addr, Sockaddr_in *addr, socklen_t salen);
+int convert_sockaddr (const char *ip_addr, Sockaddr_in *addr, socklen_t salen);
 
 
 

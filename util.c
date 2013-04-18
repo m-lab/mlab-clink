@@ -1,5 +1,7 @@
 #include "clink.h"
 
+#include <unistd.h>
+
 /* the vast majority of the following are taken directly from
    the library of procedures Stevens presents in UNIX Network
    Programming Volume 1 Seconds Edition.  The entire library
@@ -207,7 +209,7 @@ void *Calloc(size_t n, size_t size)
   return(ptr);
 }
 
-void Gettimeofday(struct timeval *tv, void *foo)
+void Gettimeofday(struct timeval *tv, struct timezone* foo)
 {
   if (gettimeofday(tv, foo) == -1)
     err_sys("gettimeofday error");
@@ -289,7 +291,7 @@ ssize_t Read(int fd, void *ptr, size_t nbytes)
   return(n);
 }
 
-void Write(int fd, void *ptr, size_t nbytes)
+void Write(int fd, const void *ptr, size_t nbytes)
 {
   if (write(fd, ptr, nbytes) != nbytes)
     err_sys("write error");
@@ -324,7 +326,7 @@ void Sendto(int fd, const void *ptr, size_t nbytes, int flags,
 
 /* the following are mine (ABD) not Stevens' */
 
-int convert_sockaddr (char *ip_addr, Sockaddr_in *addr, socklen_t salen)
+int convert_sockaddr (const char *ip_addr, Sockaddr_in *addr, socklen_t salen)
 {
   bzero (addr, salen);
   addr->sin_family = AF_INET;

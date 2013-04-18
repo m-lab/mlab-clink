@@ -1,4 +1,5 @@
 #include "clink.h"
+#include <unistd.h>
 
 extern int kernel_timestamps;
 extern int dns_resolve;
@@ -49,7 +50,7 @@ Timeval *krecvtv;
 
 void sig_alrm (int signo)
 {
-  Write (pipefd[1], "", 1);  /* write 1 null byte to pipe */
+  Write (pipefd[1], "\0", 1);  /* write 1 null byte to pipe */
   return;
 }
 
@@ -344,7 +345,7 @@ int send_probe (int size, int ttl, int timeout, Datum *datum)
    fill in the timestamps.  I am assuming that they don't have
    any actual effect.  */
 
-void clink_init (char *host, int tos)
+void clink_init (const char *host, int tos)
 {
   int n;
   struct addrinfo *ai = NULL;
@@ -361,7 +362,7 @@ void clink_init (char *host, int tos)
 
     sasend = ai->ai_addr;
   } else {
-    sasend = Calloc (1, salen);
+    sasend = (Sockaddr*) Calloc (1, salen);
     n = convert_sockaddr (host, (Sockaddr_in *) sasend, salen);
     if (n <= 0) {
       err_msg ("clink is unable to resolve this address: %s", host);
@@ -371,8 +372,8 @@ void clink_init (char *host, int tos)
     }
   }
 
-  sarecv = Calloc (1, salen);
-  sabind = Calloc (1, salen);
+  sarecv = (Sockaddr*) Calloc (1, salen);
+  sabind = (Sockaddr*) Calloc (1, salen);
 
   Pipe (pipefd);     /* the pipe for the alarm handler */
 
