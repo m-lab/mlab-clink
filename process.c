@@ -1437,7 +1437,7 @@ main (int argc, char *argv[])
     host = argv[optind];
   } else {
     mlab_initialize("clink", "1.0");
-    host = mlab_ns_lookup_hostname_for_tool("ndt")->hostname;
+    host = mlab_ns_lookup_random_hostname_for_tool("ndt")->hostname;
   }
 
   clink_loop ();
