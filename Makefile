@@ -1,6 +1,6 @@
 CC     = g++
-CFLAGS = -g -D_GNU_SOURCE -Wall
-LFLAGS =
+CFLAGS = -g -D_GNU_SOURCE -Wall -O3 #-pg
+LFLAGS = -g #-pg
 OFILES = collect.o process.o util.o
 HEADERS = clink.h
 EXECUTABLE = clink
@@ -13,7 +13,7 @@ FILES = COPYRIGHT Makefile clink.doc clink.h collect.c process.c util.c
 all: $(EXECUTABLE)
 
 $(EXECUTABLE): $(OFILES)
-	$(CC) $(LFLAGS) -o clink $(OFILES) \
+	$(CC) $(LFLAGS) -o $(EXECUTABLE) $(OFILES) \
           -Lthird_party/m-lab.libraries/trunk/lib \
           -Lthird_party/m-lab.libraries/trunk/third_party/json-cpp/lib \
           -lm -lmlab -ljson-cpp
