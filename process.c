@@ -6,7 +6,7 @@
 
 socklen_t salen = sizeof (Sockaddr);
 
-const char *host;            /* name of the destination machine */
+char host[64] = { 0 };       /* name of the destination machine */
 const char *dump_file = NULL;/* name of the dump file or NULL */
 FILE *dump_file_fp = NULL;   /* file pointer for dump file */
 int dump_minima = 0;         /* flag: should we write mins files? */
@@ -554,7 +554,7 @@ void print_link_mins (Link *link)
   FILE *fp;
   char filename[100];
 
-  sprintf (filename, "%s.%d.mins", host, link->ttl);
+  snprintf (filename, sizeof(filename), "%s.%d.mins", host, link->ttl);
   fp = fopen (filename, "w");
   if (fp == NULL) {
     printf ("Unable to open output file %s.", filename);
@@ -595,7 +595,7 @@ void print_link_delays (Link *link)
   FILE *fp;
   char filename[100];
 
-  sprintf (filename, "%s.%d.delays", host, link->ttl);
+  snprintf (filename, sizeof(filename), "%s.%d.delays", host, link->ttl);
   fp = fopen (filename, "w");
   if (fp == NULL) {
     printf ("Unable to open output file %s.", filename);
@@ -1106,7 +1106,6 @@ int send_probes (Sizes *s, int ttl)
     index = s->permute[i];
     size = s->size[index];
     done_count += send_one_probe (size, ttl);
-
   }
   return done_count;
 }
@@ -1418,7 +1417,7 @@ int main (int argc, char *argv[]) {
 
   if (use_mlab == 0) {
     if (input_file != NULL) {
-      host = input_file;
+      strncpy(host, input_file, sizeof(host));
       process_file ();
       exit (0);
     }
@@ -1427,12 +1426,14 @@ int main (int argc, char *argv[]) {
       err_quit ("usage: clink [options] <hostname> or clink -Iinput_file or clink -N");
     }
 
-    host = argv[optind];
+    strncpy(host, argv[optind], sizeof(host));
   } else {
     if (dump_file_fp == NULL)
       create_dump_file("mlab.dump.tsv");
+    dump_minima = 1;
     mlab_initialize("clink", "1.0");
-    host = mlab_ns_lookup_random_hostname_for_tool("ndt")->hostname;
+    strncpy(host,
+            mlab_ns_lookup_hostname_for_tool("ndt")->hostname, sizeof(host));
   }
 
   clink_loop ();
