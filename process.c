@@ -7,7 +7,7 @@
 socklen_t salen = sizeof (Sockaddr);
 
 const char *host;            /* name of the destination machine */
-char *dump_file = NULL;      /* name of the dump file or NULL */
+const char *dump_file = NULL;/* name of the dump file or NULL */
 FILE *dump_file_fp = NULL;   /* file pointer for dump file */
 int dump_minima = 0;         /* flag: should we write mins files? */
 int use_mlab = 0;            /* flag: should we get the domain from mlab? */
@@ -1326,6 +1326,15 @@ void clink_loop ()
   }
 }
 
+void create_dump_file(const char* filename) {
+  dump_file = filename;
+  dump_file_fp = fopen (dump_file, "w");
+  if (dump_file_fp == NULL) {
+    printf ("Unable to open output file %s. Ignoring -D option.",
+        dump_file);
+  }
+}
+
 /* main: process the options and call the appropriate procedures */
 
 main (int argc, char *argv[])
@@ -1345,12 +1354,7 @@ main (int argc, char *argv[])
       dns_resolve = 0;
       break;
     case 'D':
-      dump_file = optarg;
-      dump_file_fp = fopen (dump_file, "w");
-      if (dump_file_fp == NULL) {
-	printf ("Unable to open output file %s. Ignoring -D option.",
-		dump_file);
-      }
+      create_dump_file(optarg);
       break;
     case 'I':
       input_file = optarg;
@@ -1436,6 +1440,8 @@ main (int argc, char *argv[])
 
     host = argv[optind];
   } else {
+    if (dump_file_fp == NULL)
+      create_dump_file("mlab.dump.tsv");
     mlab_initialize("clink", "1.0");
     host = mlab_ns_lookup_random_hostname_for_tool("ndt")->hostname;
   }
