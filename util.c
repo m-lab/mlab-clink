@@ -293,7 +293,7 @@ ssize_t Read(int fd, void *ptr, size_t nbytes)
 
 void Write(int fd, const void *ptr, size_t nbytes)
 {
-  if (write(fd, ptr, nbytes) != nbytes)
+  if (write(fd, ptr, nbytes) != (ssize_t) nbytes)
     err_sys("write error");
 }
 
@@ -320,7 +320,7 @@ int Socket(int family, int type, int protocol)
 void Sendto(int fd, const void *ptr, size_t nbytes, int flags,
 	   const struct sockaddr *sa, socklen_t salen)
 {
-  if (sendto(fd, ptr, nbytes, flags, sa, salen) != nbytes)
+  if (sendto(fd, ptr, nbytes, flags, sa, salen) != (ssize_t) nbytes)
     err_sys("sendto error");
 }
 
