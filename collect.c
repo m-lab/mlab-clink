@@ -116,15 +116,14 @@ int process_ip (struct ip *ip, int len)
     } else {
       return 0;
     }
-  }
-
-  if (icmp->icmp_type == ICMP_DEST_UNREACH) {
+  } else if (icmp->icmp_type == ICMP_DEST_UNREACH) {
     if (icmp->icmp_code == ICMP_PORT_UNREACH) {
       return -1;
     } else {
       return 0;
     }
   }
+  return 0;
 }
 
 /* recv_dgram: reads all incoming datagrams and checks for
@@ -269,8 +268,6 @@ void fill_in_datum (Datum *datum)
 
 void send_dgram (int datalen, int ttl)
 {
-  int n;
-
   dport++;
   if (dport >= MAX_DPORT) dport = MIN_DPORT;
   if (dport < MIN_DPORT) dport = MIN_DPORT;

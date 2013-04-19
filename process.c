@@ -247,8 +247,8 @@ void calc_order_stats (Sample *s)
 {
   int n = s->n;
   double *x = s->x;
-  int i, j, k;
-  double pi, pj, pk;
+  int i, k;
+  double pi, pk;
 
   sort_array (x, n);
   s->min = x[0];
@@ -408,7 +408,7 @@ void fit_link (Link *link)
   int i;
   double x[MAX_SIZE];
   double y[MAX_SIZE];
-  double w[MAX_SIZE];
+  /* double w[MAX_SIZE]; */
   int n = 0;
 
   /* collect the message size and rtt for each sample */
@@ -440,7 +440,6 @@ void fit_combined_links (Link *both, Link *evens, Link *odds)
   int i;
   double x[MAX_SIZE];
   double y[MAX_SIZE];
-  double w[MAX_SIZE];
   int n = 0;
 
   /* collect the message size and rtt for each sample */
@@ -518,10 +517,8 @@ void calc_link_difference (Link *link, Link *prev,
 
 double convergence (Path *path, int i, double *bw)
 {
-  int j;
   double diff;
   double slope[4], inter[4];
-  double bw1, bw2;
   double median;
 
   /* calculate four differences between adjacent links */
@@ -619,8 +616,6 @@ void print_link_delays (Link *link)
 void print_link (Path *path, int i)
 {
   double latency, slope, bandwidth;
-  Fit *f0, *f1;
-  Fit fake[1];
   Link *link = path->both[i];
   Link *prev = path->both[i-1];
   int probes;
@@ -882,7 +877,7 @@ int send_probe_sample (Sample *s)
   int n = s->n;
   int x = send_one_probe (s->size, s->ttl);
 
-  if (n == s->n) return -1;
+  if (n + x == s->n) return -1;
 
   if (s->x[s->n-1] < s->min) {
     s->min = s->x[s->n-1];
@@ -1000,8 +995,6 @@ int fiddle_link (Link *link)
 
 void converge_link (Path *path, int ttl)
 {
-  int n = 2;
-  int avail;
   int f1, f2, f3, f4;
   double diff;
   double bw[4];
@@ -1027,8 +1020,6 @@ void converge_link (Path *path, int ttl)
 void process_path (Path *path, int from, int to)
 {
   int i;
-  Link *prev;
-  Sample *s;
 
   if (path == NULL) {
     err_quit ("Tried to process a path that contains no data.");
@@ -1218,7 +1209,6 @@ int check_link (Sizes *s, int ttl) {
 int fill_in_link (Sizes *s, int ttl) {
   int i, k, n;
   int size;
-  int count = 0;
   int index;
 
   for (k=0; k<MAX_ALT_PATH; k++) {
@@ -1281,7 +1271,7 @@ void swap_link (int ttl, int k1, int k2)
 void clink_init (const char *host, int tos);
 void clink_loop ()
 {
-  int i, ttl, k;
+  int i, ttl;
   int index;
   int done_count;
   Sizes *sizes;
@@ -1337,8 +1327,7 @@ void create_dump_file(const char* filename) {
 
 /* main: process the options and call the appropriate procedures */
 
-main (int argc, char *argv[])
-{
+int main (int argc, char *argv[]) {
   int i, c;
 
   opterr = 0;

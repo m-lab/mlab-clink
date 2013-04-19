@@ -1,5 +1,5 @@
 CC     = g++
-CFLAGS = -g -D_GNU_SOURCE
+CFLAGS = -g -D_GNU_SOURCE -Wall
 LFLAGS =
 OFILES = collect.o process.o util.o
 HEADERS = clink.h
